@@ -16,6 +16,12 @@ const (
 	Init   = "Init"
 )
 
+type gJson struct {
+	jsonstring string
+	node       *jsonstruct
+	filePath   string
+}
+
 type jsonstruct struct {
 	prv       *jsonstruct
 	next      *jsonstruct
@@ -26,7 +32,15 @@ type jsonstruct struct {
 	valueType string
 }
 
-func NewJson(filepath string) *jsonstruct {
+func NewJson(filepath string) *gJson {
+	node := nodeStruct(filepath)
+	return &gJson{
+		jsonstring: "",
+		node:       node,
+		filePath:   filepath,
+	}
+}
+func nodeStruct(filepath string) *jsonstruct {
 	f, _ := os.Open(filepath)
 	r := bufio.NewReader(f)
 
@@ -174,4 +188,69 @@ func start(node *jsonstruct) *jsonstruct {
 		}
 	}
 	return node
+}
+
+func (gojson *gJson) toJson(node *jsonstruct) string {
+	var jsonstring string
+	node = gojson.node.next
+	gojson.jsonstring = gojson.jsonstring + "{"
+	for {
+
+		fmt.Println(node)
+		if node.valueType == "" {
+			gojson.jsonstring = jsonstring + "}"
+			break
+		}
+
+		if node.valueType == Array {
+			gojson.jsonstring = jsonstring + fmt.Sprintf("\"%v\": [", node.key)
+		} else if node.valueType == Object {
+			if node.key != "" {
+				gojson.jsonstring = gojson.jsonstring + fmt.Sprintf("\"%v\": {", node.key)
+			} else {
+				gojson.jsonstring = gojson.jsonstring + "{"
+			}
+		} else {
+			if node.next != nil {
+				gojson.jsonstring = gojson.jsonstring + fmt.Sprintf("\"%v\": \"%v\",", node.key, node.value)
+			} else {
+				gojson.jsonstring = gojson.jsonstring + fmt.Sprintf("\"%v\": \"%v\"", node.key, node.value)
+			}
+
+		}
+		if node.child != nil {
+			node = node.child
+		} else if node.next != nil {
+			node = node.next
+		} else {
+			node = gojson.sync(node)
+		}
+
+	}
+	return jsonstring
+}
+
+func (gojson *gJson) sync(node *jsonstruct) *jsonstruct {
+	firstnode := first(node)
+	if firstnode.father != nil {
+		fathernode := firstnode.father
+		if fathernode.valueType == "" || fathernode.valueType == Object {
+			gojson.jsonstring = gojson.jsonstring + "}"
+		} else if fathernode.valueType == Array {
+			gojson.jsonstring = gojson.jsonstring + "]"
+		}
+		if fathernode.next != nil {
+			gojson.jsonstring = gojson.jsonstring + ","
+		}
+		if fathernode.next == nil {
+			firstnode = gojson.sync(fathernode)
+		} else {
+			if fathernode.next.child != nil {
+				//				fmt.Println("child", fathernode.next.child)
+			}
+			return fathernode.next
+		}
+	}
+
+	return firstnode
 }
