@@ -190,20 +190,19 @@ func start(node *jsonstruct) *jsonstruct {
 	return node
 }
 
-func (gojson *gJson) toJson(node *jsonstruct) string {
-	var jsonstring string
-	node = gojson.node.next
+func (gojson *gJson) GetJson() string {
+	node := gojson.node.next
 	gojson.jsonstring = gojson.jsonstring + "{"
 	for {
 
-		fmt.Println(node)
+		//		fmt.Println(node)
 		if node.valueType == "" {
-			gojson.jsonstring = jsonstring + "}"
+			gojson.jsonstring = gojson.jsonstring + "}"
 			break
 		}
 
 		if node.valueType == Array {
-			gojson.jsonstring = jsonstring + fmt.Sprintf("\"%v\": [", node.key)
+			gojson.jsonstring = gojson.jsonstring + fmt.Sprintf("\"%v\": [", node.key)
 		} else if node.valueType == Object {
 			if node.key != "" {
 				gojson.jsonstring = gojson.jsonstring + fmt.Sprintf("\"%v\": {", node.key)
@@ -227,7 +226,7 @@ func (gojson *gJson) toJson(node *jsonstruct) string {
 		}
 
 	}
-	return jsonstring
+	return gojson.jsonstring
 }
 
 func (gojson *gJson) sync(node *jsonstruct) *jsonstruct {
